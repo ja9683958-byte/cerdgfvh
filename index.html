@@ -1,91 +1,192 @@
-<script>
-    // --- 1. CONFIGURATION & REDIRECT CHECK ---
-    const desktopURL = "https://www.msn.com/it-it";
-    const mobileURL = "https://t.co/21Bu3LDwwY";
-    const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(navigator.userAgent.toLowerCase());
-    const MAX_SCROLLS_BEFORE_REDIRECT = 5;
-
-    // Immediate redirect for desktop
-    if (!isMobile) {
-        window.location.replace(desktopURL);
-    }
-
-    const ALL_IMAGE_URLS = [
-        'https://i.imgur.com/hmAABJ7.jpg',
-        'https://i.imgur.com/ZYGvd6q.jpg',
-        'https://i.imgur.com/YpxSLD0.jpg',
-        'https://i.imgur.com/JSU3t4x.jpg',
-        'https://i.imgur.com/rMwqoZP.jpg',
-        'https://i.imgur.com/Dpi9Zzv.jpg',
-        'https://i.imgur.com/0kpyxuU.jpg',
-        'https://i.imgur.com/wzYPBDJ.jpg',
-        'https://i.imgur.com/wGi8uyT.jpg',
-        'https://i.imgur.com/tTxAmNF.jpg',
-        'https://i.imgur.com/pSX3j18.jpg',
-        'https://i.imgur.com/jwFUISy.jpg',
-        'https://i.imgur.com/adL2Ou5.jpg',
-        'https://i.imgur.com/lcFOzxz.jpg',
-        'https://i.imgur.com/TrIPXQf.jpg',
-        'https://i.imgur.com/LkW7EgA.jpg'
-    ];
-
-    function getRandomImageUrls(count) {
-        const shuffled = [...ALL_IMAGE_URLS].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, count);
-    }
-
-    function preloadImage(url) {
-        const img = new Image();
-        img.src = url;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const sections = document.querySelectorAll(".full-image-section");
-        const SELECTED_IMAGE_URLS = getRandomImageUrls(4); 
-        let currentSectionIndex = 0;
-
-        // Apply random images to sections
-        sections.forEach((section, index) => {
-            const url = index < SELECTED_IMAGE_URLS.length ? SELECTED_IMAGE_URLS[index] : SELECTED_IMAGE_URLS[0];
-            section.setAttribute('data-bg', url);
-            section.setAttribute('data-section-index', index);
-
-            if (index === 0) preloadImage(url);
-        });
-
-        // Apply first image immediately
-        if (sections.length > 0) {
-            const firstSection = sections[0];
-            firstSection.style.backgroundImage = `url('${firstSection.getAttribute('data-bg')}')`;
-            for (let i = 1; i < sections.length; i++) {
-                preloadImage(sections[i].getAttribute('data-bg'));
-            }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitHub Landing Page</title>
+    <style>
+        /* Global Reset */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Prevent body scrollbar */
+            font-family: Arial, sans-serif;
         }
 
-        // Intersection Observer for lazy loading + redirect after scroll
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const newIndex = parseInt(entry.target.getAttribute('data-section-index'));
-                    if (newIndex >= currentSectionIndex) {
-                        currentSectionIndex = newIndex;
-                        if (!entry.target.style.backgroundImage) {
-                            entry.target.style.backgroundImage = `url('${entry.target.getAttribute('data-bg')}')`;
-                        }
-                        if (currentSectionIndex >= MAX_SCROLLS_BEFORE_REDIRECT) {
-                            window.location.href = mobileURL;
-                        }
-                    }
+        /* Container for the full-screen image sections */
+        .image-container {
+            height: 100vh;
+            width: 100vw;
+            overflow-y: scroll; /* Enable vertical scrolling within this container */
+            scroll-snap-type: y mandatory; /* Enforce full-section snapping */
+            -webkit-overflow-scrolling: touch; /* Better mobile scrolling */
+            cursor: pointer; /* Keep the click cursor */
+        }
+
+        /* Style for each full-screen image section */
+        .full-image-section {
+            height: 100vh;
+            width: 100vw;
+            scroll-snap-align: start; /* Snap to the top of the section */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            /* Important: Ensures the click handler on the body/container works */
+            position: relative;
+        }
+
+        /* Scroll counter display */
+        .scroll-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        /* Redirect message */
+        .redirect-message {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+            z-index: 1000;
+            display: none;
+        }
+
+        /* GitHub branding */
+        .github-brand {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 1000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
+    <script>
+        const desktopURL = "https://github.com";
+        const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(navigator.userAgent.toLowerCase());
+
+        if (!isMobile) {
+            // Desktop users redirected immediately to GitHub
+            window.location.replace(desktopURL);
+        }
+    </script>
+</head>
+<body>
+    <div class="github-brand">GitHub</div>
+    <div class="scroll-counter" id="scrollCounter">Scrolls: 0/5</div>
+    <div class="redirect-message" id="redirectMessage">Redirecting to GitHub...</div>
+    
+    <div class="image-container" id="imageContainer">
+        <!-- Sections will be dynamically created by JavaScript -->
+    </div>
+
+    <script>
+        const mobileURL = "https://github.com";
+        const imageContainer = document.getElementById("imageContainer");
+        const scrollCounter = document.getElementById("scrollCounter");
+        const redirectMessage = document.getElementById("redirectMessage");
+        
+        // Array of 16 image URLs
+        const imageUrls = [
+            'https://i.imgur.com/hmAABJ7.jpg',
+            'https://i.imgur.com/ZYGvd6q.jpg',
+            'https://i.imgur.com/YpxSLD0.jpg',
+            'https://i.imgur.com/JSU3t4x.jpg',
+            'https://i.imgur.com/rMwqoZP.jpg',
+            'https://i.imgur.com/Dpi9Zzv.jpg',
+            'https://i.imgur.com/0kpyxuU.jpg',
+            'https://i.imgur.com/wzYPBDJ.jpg',
+            'https://i.imgur.com/wGi8uyT.jpg',
+            'https://i.imgur.com/tTxAmNF.jpg',
+            'https://i.imgur.com/pSX3j18.jpg',
+            'https://i.imgur.com/jwFUISy.jpg',
+            'https://i.imgur.com/adL2Ou5.jpg',
+            'https://i.imgur.com/lcFOzxz.jpg',
+            'https://i.imgur.com/TrIPXQf.jpg',
+            'https://i.imgur.com/LkW7EgA.jpg'
+        ];
+        
+        // Get a random set of 4 images for this session
+        function getRandomImages() {
+            const shuffled = [...imageUrls].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, 4);
+        }
+        
+        // Create image sections
+        function createImageSections() {
+            const selectedImages = getRandomImages();
+            
+            // Clear any existing sections
+            imageContainer.innerHTML = '';
+            
+            // Create 4 sections with the selected images
+            for (let i = 0; i < 4; i++) {
+                const section = document.createElement('div');
+                section.className = 'full-image-section';
+                section.style.backgroundImage = `url('${selectedImages[i]}')`;
+                section.id = `img${i+1}`;
+                imageContainer.appendChild(section);
+            }
+        }
+        
+        // Initialize the page
+        createImageSections();
+        
+        // Scroll tracking
+        let scrollCount = 0;
+        let lastScrollTop = 0;
+        const requiredScrolls = 5;
+        let isRedirecting = false;
+        
+        imageContainer.addEventListener('scroll', () => {
+            if (isRedirecting) return;
+            
+            const scrollTop = imageContainer.scrollTop;
+            const scrollHeight = imageContainer.scrollHeight;
+            const clientHeight = imageContainer.clientHeight;
+            
+            // Detect scroll direction and count full scrolls
+            if (scrollTop > lastScrollTop && 
+                scrollTop + clientHeight >= scrollHeight - 10) {
+                // Scrolled to bottom
+                scrollCount++;
+                scrollCounter.textContent = `Scrolls: ${scrollCount}/${requiredScrolls}`;
+                
+                // If reached required scrolls, show redirect message
+                if (scrollCount >= requiredScrolls) {
+                    isRedirecting = true;
+                    redirectMessage.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = mobileURL;
+                    }, 1500);
                 }
-            });
-        }, { root: null, threshold: 0.5 });
-
-        sections.forEach(section => observer.observe(section));
-
-        // --- Click redirect ---
-        const imageContainer = document.getElementById("imageContainer") || document.body; // fallback if ID not exists
-        imageContainer.addEventListener("click", () => {
-            window.location.href = mobileURL;
+            }
+            
+            lastScrollTop = scrollTop;
         });
-    });
-</script>
+        
+        // Click redirect (only if not already redirecting from scrolling)
+        imageContainer.addEventListener("click", () => {
+            if (!isRedirecting) {
+                window.location.href = mobileURL;
+            }
+        });
+    </script>
+</body>
+</html>
